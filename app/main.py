@@ -10,6 +10,7 @@ from app.models.config import KioskConfig
 from app.models.catalog import CatalogCategory, CatalogProduct, CatalogModifierGroup, CatalogModifierOption
 from app.models.overrides import StoreCategoryOverride, StoreProductOverride, StoreOptionOverride
 from app.models.orders import Order, OrderLine, OrderLineMod
+from fastapi.middleware.cors import CORSMiddleware
 
 # Routers
 from app.api.health import router as health_router
@@ -45,3 +46,10 @@ app.include_router(kiosk_router, prefix="/api/v1", tags=["kiosk"])
 app.include_router(orders_router, prefix="/api/v1", tags=["orders"])
 app.include_router(pos_router, prefix="/api/v1", tags=["pos"])
 app.include_router(reports_router, prefix="/api/v1", tags=["reports"])
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
