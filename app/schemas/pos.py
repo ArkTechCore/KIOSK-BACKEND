@@ -1,18 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class OrderLineIn(BaseModel):
-    productId: str
-    qty: int
-    selected: dict[str, list[str]]  # groupId -> optionIds
-    note: Optional[str] = None
 
-class CreateOrderIn(BaseModel):
-    deviceId: str
-    lines: list[OrderLineIn]
+class PosLookupOut(BaseModel):
+    found: bool
+    order_number: Optional[int] = None
+    barcode_value: Optional[str] = None
+    total_cents: Optional[int] = None
+    payment_status: Optional[str] = None
+    status: Optional[str] = None
 
-class CreateOrderOut(BaseModel):
-    order_id: str
-    order_number: int
-    barcode_value: str
-    totals: dict
+
+class PosMarkPaidIn(BaseModel):
+    barcode: str
+    pos_txn_id: str
+    paid_amount_cents: int

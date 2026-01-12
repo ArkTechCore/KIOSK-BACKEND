@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.db.session import SessionLocal
-from app.models.store import Store
+from app.models.admin_user import AdminUser
 
 bearer = HTTPBearer()
 
@@ -18,7 +18,7 @@ def db():
         s.close()
 
 
-def require_device_token(
+def require_admin_token(
     cred: HTTPAuthorizationCredentials = Depends(bearer),
     session: Session = Depends(db),
 ):
@@ -26,19 +26,17 @@ def require_device_token(
     try:
         payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise HTTPException(status_code=401, detail="Invalid admin token")
 
-    if payload.get("type") != "device":
-        raise HTTPException(status_code=401, detail="Not a device token")
+    if payload.get("type") != "admin":
+        raise HTTPException(status_code=401, detail="Not an admin token")
 
-    store_id = payload.get("store_id")
-    role = payload.get("role")
-    device_id = payload.get("device_id")
-    if not store_id or not role or not device_id:
+    admin_id = payload.get("admin_id")
+    if not admin_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    store = session.get(Store, store_id)
-    if not store or not store.active:
-        raise HTTPException(status_code=401, detail="Store inactive")
+    admin = session.get(AdminUser, admin_id)
+    if not admin or not admin.active:
+        raise HTTPException(status_code=401, detail="Admin inactive")
 
-    return {"store_id": store_id, "role": role, "device_id": device_id}
+    return {"admin_id": admin_id, "email": admin.email, "role": admin.role}

@@ -9,11 +9,11 @@ from app.schemas.reports import DailyReportOut
 
 router = APIRouter()
 
+
 @router.get("/stores/{store_id}/reports/daily", response_model=DailyReportOut)
 def daily_report(store_id: str, date_str: str, session: Session = Depends(db), auth=Depends(require_device_token)):
-    # date_str = YYYY-MM-DD
     d = date.fromisoformat(date_str)
-    start = datetime(d.year, d.month, d.day)
+    start = datetime(d.year, d.month, d.day, 0, 0, 0)
     end = datetime(d.year, d.month, d.day, 23, 59, 59)
 
     paid_orders = session.query(Order.id).filter(
@@ -26,8 +26,8 @@ def daily_report(store_id: str, date_str: str, session: Session = Depends(db), a
     total_orders = session.query(func.count()).select_from(paid_orders).scalar() or 0
 
     total_sales = session.query(func.coalesce(func.sum(Order.total_cents), 0)).filter(
-        Order.store_id==store_id,
-        Order.payment_status=="PAID",
+        Order.store_id == store_id,
+        Order.payment_status == "PAID",
         Order.paid_at >= start,
         Order.paid_at <= end
     ).scalar() or 0
@@ -44,5 +44,5 @@ def daily_report(store_id: str, date_str: str, session: Session = Depends(db), a
         date=date_str,
         total_orders=int(total_orders),
         total_sales_cents=int(total_sales),
-        by_category=by_cat,
+        by_category=by_cat
     )

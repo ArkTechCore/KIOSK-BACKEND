@@ -8,11 +8,13 @@ from app.schemas.pos import PosLookupOut, PosMarkPaidIn
 
 router = APIRouter()
 
+
 @router.get("/pos/lookup", response_model=PosLookupOut)
 def pos_lookup(barcode: str, session: Session = Depends(db), auth=Depends(require_device_token)):
     o = session.query(Order).filter(Order.barcode_value == barcode).first()
     if not o:
         return PosLookupOut(found=False)
+
     return PosLookupOut(
         found=True,
         order_number=o.order_number,
@@ -22,11 +24,13 @@ def pos_lookup(barcode: str, session: Session = Depends(db), auth=Depends(requir
         status=o.status,
     )
 
+
 @router.post("/pos/mark-paid")
 def pos_mark_paid(body: PosMarkPaidIn, session: Session = Depends(db), auth=Depends(require_device_token)):
     o = session.query(Order).filter(Order.barcode_value == body.barcode).first()
     if not o:
         raise HTTPException(status_code=404, detail="Not found")
+
     if o.payment_status == "PAID":
         return {"ok": True, "already_paid": True}
 

@@ -2,8 +2,9 @@ from sqlalchemy import String, Integer, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
+
 class KioskConfig(Base):
-    __tablename__ = "kiosk_configs"
+    __tablename__ = "store_kiosk_config"
 
     store_id: Mapped[str] = mapped_column(String(20), ForeignKey("stores.id"), primary_key=True)
 

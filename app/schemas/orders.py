@@ -1,36 +1,21 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class MenuCategoryOut(BaseModel):
-    id: str
-    name: str
-    sort: int
-    imageUrl: Optional[str] = None
 
-class MenuModifierOptionOut(BaseModel):
-    id: str
-    name: str
-    deltaCents: int
+class OrderLineIn(BaseModel):
+    productId: str
+    qty: int
+    selected: dict[str, list[str]]  # groupId -> optionIds
+    note: Optional[str] = None
 
-class MenuModifierGroupOut(BaseModel):
-    id: str
-    title: str
-    required: bool
-    minSelect: int
-    maxSelect: int
-    uiType: str
-    options: list[MenuModifierOptionOut]
 
-class MenuProductOut(BaseModel):
-    id: str
-    categoryId: str
-    name: str
-    description: str
-    priceCents: int
-    available: bool
-    imageUrl: Optional[str] = None
-    modifierGroups: list[MenuModifierGroupOut]
+class CreateOrderIn(BaseModel):
+    deviceId: str
+    lines: list[OrderLineIn]
 
-class MenuOut(BaseModel):
-    categories: list[MenuCategoryOut]
-    products: list[MenuProductOut]
+
+class CreateOrderOut(BaseModel):
+    order_id: str
+    order_number: int
+    barcode_value: str
+    totals: dict
