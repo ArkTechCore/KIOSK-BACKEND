@@ -77,7 +77,6 @@ def import_catalog(
     session.query(CatalogCategory).delete()
     session.commit()
 
-    # insert in FK order
     for c in categories:
         session.add(_cat_row(c))
     for p in products:
@@ -108,26 +107,10 @@ def export_catalog(
     session: Session = Depends(db),
     _admin=Depends(require_admin_token),
 ):
-    cats = (
-        session.query(CatalogCategory)
-        .order_by(CatalogCategory.sort.asc(), CatalogCategory.id.asc())
-        .all()
-    )
-    prods = (
-        session.query(CatalogProduct)
-        .order_by(CatalogProduct.category_id.asc(), CatalogProduct.id.asc())
-        .all()
-    )
-    groups = (
-        session.query(CatalogModifierGroup)
-        .order_by(CatalogModifierGroup.product_id.asc(), CatalogModifierGroup.sort.asc())
-        .all()
-    )
-    opts = (
-        session.query(CatalogModifierOption)
-        .order_by(CatalogModifierOption.group_id.asc(), CatalogModifierOption.sort.asc())
-        .all()
-    )
+    cats = session.query(CatalogCategory).order_by(CatalogCategory.sort.asc(), CatalogCategory.id.asc()).all()
+    prods = session.query(CatalogProduct).order_by(CatalogProduct.category_id.asc(), CatalogProduct.id.asc()).all()
+    groups = session.query(CatalogModifierGroup).order_by(CatalogModifierGroup.product_id.asc(), CatalogModifierGroup.sort.asc()).all()
+    opts = session.query(CatalogModifierOption).order_by(CatalogModifierOption.group_id.asc(), CatalogModifierOption.sort.asc()).all()
 
     return {
         "categories": [

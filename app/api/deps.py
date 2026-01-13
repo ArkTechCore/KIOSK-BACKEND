@@ -63,7 +63,6 @@ def require_admin_token(
     if not admin_id or not role:
         raise HTTPException(status_code=401, detail="Invalid token payload")
 
-    # Enforce platform admin only for admin APIs
     if role != "PLATFORM_ADMIN":
         raise HTTPException(status_code=403, detail="Insufficient role")
 
@@ -71,10 +70,14 @@ def require_admin_token(
     if not admin:
         raise HTTPException(status_code=401, detail="Admin not found")
 
-    # If your AdminUser model has active/status fields, enforce them safely:
     if hasattr(admin, "active") and not getattr(admin, "active"):
         raise HTTPException(status_code=401, detail="Admin inactive")
+
     if hasattr(admin, "status") and getattr(admin, "status") not in (None, "ACTIVE"):
         raise HTTPException(status_code=401, detail="Admin inactive")
 
     return {"admin_id": admin_id, "role": role}
+
+
+# ✅ Backward-compatible alias (fixes your Render crash if any file imports require_admin)
+require_admin = require_admin_token
