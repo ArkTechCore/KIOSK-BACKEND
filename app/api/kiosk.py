@@ -39,6 +39,24 @@ def kiosk_config(store_id: str, session: Session = Depends(db), auth=Depends(req
     }
 
 
+# Existing endpoint (keep)
 @router.get("/stores/{store_id}/menu")
 def store_menu(store_id: str, session: Session = Depends(db), auth=Depends(require_device_token)):
     return resolved_menu(session, store_id)
+
+
+# New, stable payload endpoint (use this in Flutter)
+@router.get("/stores/{store_id}/menu-v2")
+def store_menu_v2(store_id: str, session: Session = Depends(db), auth=Depends(require_device_token)):
+    """
+    v2 returns a predictable payload and is safe for backend-driven kiosk UI.
+    """
+    menu = resolved_menu(session, store_id)
+
+    # Normalize small things so Flutter can depend on them
+    # (we don't change your resolver internals here)
+    return {
+        "storeId": store_id,
+        "currency": "USD",
+        "menu": menu,
+    }
