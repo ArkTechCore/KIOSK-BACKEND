@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.api.deps import db, require_admin
+from app.api.deps import db, require_admin_token
 from app.models.catalog import (
     CatalogCategory,
     CatalogProduct,
@@ -63,24 +63,21 @@ def _opt_row(x: dict) -> CatalogModifierOption:
 def import_catalog(
     body: dict,
     session: Session = Depends(db),
-    admin=Depends(require_admin),
+    _admin=Depends(require_admin_token),
 ):
-    # Expecting:
-    # body = { categories:[], products:[], modifierGroups:[], modifierOptions:[] }
-
     categories = body.get("categories") or []
     products = body.get("products") or []
     groups = body.get("modifierGroups") or []
     options = body.get("modifierOptions") or []
 
-    # wipe existing catalog (simple + safe with FK order)
+    # wipe existing catalog (FK order)
     session.query(CatalogModifierOption).delete()
     session.query(CatalogModifierGroup).delete()
     session.query(CatalogProduct).delete()
     session.query(CatalogCategory).delete()
     session.commit()
 
-    # insert new catalog
+    # insert in FK order
     for c in categories:
         session.add(_cat_row(c))
     for p in products:
@@ -95,33 +92,47 @@ def import_catalog(
         session.add(_opt_row(o))
     session.commit()
 
-    return {"ok": True, "counts": {
-        "categories": len(categories),
-        "products": len(products),
-        "modifierGroups": len(groups),
-        "modifierOptions": len(options),
-    }}
+    return {
+        "ok": True,
+        "counts": {
+            "categories": len(categories),
+            "products": len(products),
+            "modifierGroups": len(groups),
+            "modifierOptions": len(options),
+        },
+    }
 
 
 @router.get("/admin/catalog/export")
 def export_catalog(
     session: Session = Depends(db),
-    admin=Depends(require_admin),
+    _admin=Depends(require_admin_token),
 ):
-    cats = session.query(CatalogCategory).order_by(CatalogCategory.sort.asc(), CatalogCategory.id.asc()).all()
-    prods = session.query(CatalogProduct).order_by(CatalogProduct.category_id.asc(), CatalogProduct.id.asc()).all()
-    groups = session.query(CatalogModifierGroup).order_by(CatalogModifierGroup.product_id.asc(), CatalogModifierGroup.sort.asc()).all()
-    opts = session.query(CatalogModifierOption).order_by(CatalogModifierOption.group_id.asc(), CatalogModifierOption.sort.asc()).all()
+    cats = (
+        session.query(CatalogCategory)
+        .order_by(CatalogCategory.sort.asc(), CatalogCategory.id.asc())
+        .all()
+    )
+    prods = (
+        session.query(CatalogProduct)
+        .order_by(CatalogProduct.category_id.asc(), CatalogProduct.id.asc())
+        .all()
+    )
+    groups = (
+        session.query(CatalogModifierGroup)
+        .order_by(CatalogModifierGroup.product_id.asc(), CatalogModifierGroup.sort.asc())
+        .all()
+    )
+    opts = (
+        session.query(CatalogModifierOption)
+        .order_by(CatalogModifierOption.group_id.asc(), CatalogModifierOption.sort.asc())
+        .all()
+    )
 
     return {
         "categories": [
-            {
-                "id": c.id,
-                "name": c.name,
-                "sort": c.sort,
-                "imageUrl": c.image_url,
-                "active": c.active,
-            } for c in cats
+            {"id": c.id, "name": c.name, "sort": c.sort, "imageUrl": c.image_url, "active": c.active}
+            for c in cats
         ],
         "products": [
             {
@@ -132,7 +143,8 @@ def export_catalog(
                 "basePriceCents": p.base_price_cents,
                 "imageUrl": p.image_url,
                 "active": p.active,
-            } for p in prods
+            }
+            for p in prods
         ],
         "modifierGroups": [
             {
@@ -145,7 +157,8 @@ def export_catalog(
                 "uiType": g.ui_type,
                 "active": g.active,
                 "sort": g.sort,
-            } for g in groups
+            }
+            for g in groups
         ],
         "modifierOptions": [
             {
@@ -155,6 +168,7 @@ def export_catalog(
                 "deltaCents": o.delta_cents,
                 "active": o.active,
                 "sort": o.sort,
-            } for o in opts
+            }
+            for o in opts
         ],
     }
